@@ -1,0 +1,29 @@
+name: Versioned Build
+
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Get version
+      id: version
+      run: |
+        echo "version=$(git describe --tags --always)" >> $GITHUB_OUTPUT
+        echo "commit=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+    
+    - name: Build with version info
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: false
+        build-args: |
+          APP_VERSION=${{ steps.version.outputs.version }}
+          GIT_COMMIT=${{ steps.version.outputs.commit }}
+        tags: docker-ci-app:${{ steps.version.outputs.version }}
